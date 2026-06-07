@@ -1,0 +1,30 @@
+[
+  {
+    "cihaz_id": "sera_01",
+    "sicaklik": 24.5,
+    "nem": 55.0,
+    "toprak_nemi": 48,
+    "zaman_damgasi": "2026-06-08T10:00:00Z"
+  },
+  {
+    "cihaz_id": "sera_01",
+    "sicaklik": 28.2,
+    "nem": 50.5,
+    "toprak_nemi": 42,
+    "zaman_damgasi": "2026-06-08T11:00:00Z"
+  },
+  {
+    "cihaz_id": "sera_01",
+    "sicaklik": 32.1,
+    "nem": 45.0,
+    "toprak_nemi": 38,
+    "zaman_damgasi": "2026-06-08T12:00:00Z"
+  },
+  {
+    "cihaz_id": "sera_01",
+    "sicaklik": 15.4,
+    "nem": 68.2,
+    "toprak_nemi": 58,
+    "zaman_damgasi": "2026-06-08T22:00:00Z"
+  }
+]
