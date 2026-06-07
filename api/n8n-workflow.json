@@ -1,0 +1,136 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "1918b61d-9192-4770-973f-830b4897040c",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        -32
+      ],
+      "id": "a91b0142-aa48-4e5c-8eca-bd4c6a703860",
+      "name": "Webhook",
+      "webhookId": "1918b61d-9192-4770-973f-830b4897040c"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body }}",
+        "options": {
+          "systemMessage": "Sen, hassas tarım prensiplerine göre çalışan, enerji ve su tasarrufunu önemseyen ancak birinci önceliği her zaman bitkinin hayatta kalması ve sağlığı olan proaktif (öngörülü) bir uzman Sera Otomasyon Ajanısın. Sana JSON formatında iletilen anlık sensör verilerini (sıcaklık, nem, toprak nemi) ve geleceğe dönük saatlik/günlük hava durumu tahminlerini entegre bir şekilde analiz etmelisin.\n\nAmacın yaklaşan hava olaylarını hesaba katarak gereksiz enerji ve su tüketimini önlemektir. Ancak bitkiler için hayati risk taşıyan \"Kritik Acil Durum\" eşiklerine ulaşıldığında, tasarruf kuralları anında geçersiz kılınmalı ve bitki kurtarılmalıdır.\n\nAşağıdaki 3 röle için (komut_su, komut_fan, komut_isitici) sensörleri ve hava durumunu analiz edip sadece \"ac\" veya \"kapat\" kararı vermelisin. Karar verirken şu kuralları kesinlikle uygula:\n\nSu Pompası: > * Kritik Acil Durum: Eğer toprak nemi %30'un altındaysa (<%30), yakın zamanda yağmur bekleniyor olsa bile tasarrufu boşver ve nem %45 seviyesine ulaşana kadar pompayı \"ac\".\n\nProaktif Tasarruf: Eğer toprak nemi %30 ile %40 arasındaysa ve 1-3 saat içinde etkili bir yağmur bekleniyorsa, su tasarrufu yapmak için pompayı \"kapat\". Doğal yağış beklenmiyorsa \"ac\".\n\nHavalandırma Fanı: > * Kritik Acil Durum: Eğer anlık sıcaklık 35°C'nin üzerine çıkmışsa (>35°C), kısa süre sonra havanın soğuyacağı tahmin edilse bile bekleme ve sıcaklık 30°C'nin altına inene kadar fanı \"ac\".\n\nProaktif Tasarruf: Eğer anlık sıcaklık 30°C - 35°C arasındaysa ve hava durumu verileri çok kısa süre içinde ciddi bir serinleme gösteriyorsa, enerjiyi israf etmemek için fanı \"kapat\". Serinleme beklenmiyorsa \"ac\". Ayrıca anlık sıcaklık normal olsa bile yaklaşan bir sıcak hava dalgası varsa serayı önceden serinletmek için şimdiden \"ac\".\n\nOrtam Isıtıcısı: > * Kritik Acil Durum: Eğer anlık sıcaklık 13°C'nin altına düşmüşse (<13°C), kısa süre sonra güneş açacak veya sıcak hava dalgası gelecek olsa bile bitkiyi riske atma ve sıcaklık 20°C olana kadar ısıtıcıyı \"ac\".\n\nProaktif Tasarruf: Eğer anlık sıcaklık 13°C - 18°C arasındaysa ve kısa süre sonra güneş açacak/hava doğal yollarla belirgin şekilde ısınacaksa ısıtıcıyı \"kapat\". Beklenmiyorsa \"ac\". Ayrıca ilerleyen saatlerde ani bir don bekleniyorsa önceden \"ac\".\n\nÖNEMLİ ÇIKTI KURALLARI:\nYanıtın sadece ve sadece aşağıdaki JSON yapısında olmalıdır. Kesinlikle markdown formatı kullanma (```json vb. YAZMA). Kararının sebebi, açıklama, yorum veya ekstra hiçbir metin ekleme. Sadece makinenin okuyabileceği saf JSON verisi döndür:\n{ \"komut_su\": \"kapat\", \"komut_fan\": \"ac\", \"komut_isitici\": \"kapat\" }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -112,
+        -32
+      ],
+      "id": "4576f35f-9144-43ac-93fd-201a35ac8532",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        192
+      ],
+      "id": "2d709046-bac5-4ad8-a2b3-bdc104c73a25",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "L8GTTun5kpF5iers",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tüm gelen verileri döngüye alalım\nfor (const item of items) {\n  \n  // 1. ADIM: AI'dan gelen kirli metni al.\n  // DİKKAT: Senin akışında AI çıktısı 'output', 'text', 'response' veya 'content' olabilir.\n  // Code node'unu açınca SOL tarafta \"INPUT\" altında ne yazıyorsa onu kullan.\n  // Ben buraya en olası ihtimali yazıyorum, eğer çalışmazsa burayı kontrol et:\n  const gelenKirliMetin = item.json.output || item.json.text || item.json.content || item.json.message;\n\n  if (gelenKirliMetin && typeof gelenKirliMetin === 'string') {\n    try {\n      // 2. ADIM: Regex Temizliği\n      // ```json yazısını, ``` işaretini ve baştaki/sondaki boşlukları siler.\n      const temizMetin = gelenKirliMetin\n        .replace(/```json/gi, \"\") // ```json kısmını sil (büyük küçük harf duyarsız)\n        .replace(/```/g, \"\")      // Kalan ``` işaretlerini sil\n        .trim();                  // Baş ve sondaki boşlukları/yeni satırları temizle\n\n      // 3. ADIM: String'i Gerçek JSON Objesine Çevir\n      const jsonObjesi = JSON.parse(temizMetin);\n\n      // 4. ADIM: Veriyi güncelle\n      // Artık item.json içinde karmaşık yazı değil, direkt { komut_su: \"kapat\" } var.\n      item.json = jsonObjesi;\n\n    } catch (error) {\n      // Eğer bir hata olursa görelim\n      item.json.hata = \"JSON Parse Edilemedi: \" + error.message;\n    }\n  }\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -32
+      ],
+      "id": "6b463bc6-193e-4525-a0e8-4eee54807f9f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        -32
+      ],
+      "id": "783775b2-6c2a-4a82-a0db-436afea90f04",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0413d9ad8778f7f7eb0fe1c1ceec105b3c7faae86795a66ae6ad65397690a387"
+  }
+}
