@@ -1,0 +1,10 @@
+# Python geçici dosyaları
+__pycache__/
+*.pyc
+
+# Log dosyaları
+*.log
+
+# İşletim sistemi dosyaları
+.DS_Store
+Thumbs.db
