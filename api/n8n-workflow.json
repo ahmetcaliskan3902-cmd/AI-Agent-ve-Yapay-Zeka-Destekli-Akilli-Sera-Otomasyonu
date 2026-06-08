@@ -41,7 +41,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1.1,
       "position": [
-        -112,
+        -224,
         192
       ],
       "id": "2d709046-bac5-4ad8-a2b3-bdc104c73a25",
@@ -55,7 +55,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Tüm gelen verileri döngüye alalım\nfor (const item of items) {\n  \n  // 1. ADIM: AI'dan gelen kirli metni al.\n  // DİKKAT: Senin akışında AI çıktısı 'output', 'text', 'response' veya 'content' olabilir.\n  // Code node'unu açınca SOL tarafta \"INPUT\" altında ne yazıyorsa onu kullan.\n  // Ben buraya en olası ihtimali yazıyorum, eğer çalışmazsa burayı kontrol et:\n  const gelenKirliMetin = item.json.output || item.json.text || item.json.content || item.json.message;\n\n  if (gelenKirliMetin && typeof gelenKirliMetin === 'string') {\n    try {\n      // 2. ADIM: Regex Temizliği\n      // ```json yazısını, ``` işaretini ve baştaki/sondaki boşlukları siler.\n      const temizMetin = gelenKirliMetin\n        .replace(/```json/gi, \"\") // ```json kısmını sil (büyük küçük harf duyarsız)\n        .replace(/```/g, \"\")      // Kalan ``` işaretlerini sil\n        .trim();                  // Baş ve sondaki boşlukları/yeni satırları temizle\n\n      // 3. ADIM: String'i Gerçek JSON Objesine Çevir\n      const jsonObjesi = JSON.parse(temizMetin);\n\n      // 4. ADIM: Veriyi güncelle\n      // Artık item.json içinde karmaşık yazı değil, direkt { komut_su: \"kapat\" } var.\n      item.json = jsonObjesi;\n\n    } catch (error) {\n      // Eğer bir hata olursa görelim\n      item.json.hata = \"JSON Parse Edilemedi: \" + error.message;\n    }\n  }\n}\n\nreturn items;"
+        "jsCode": "// AI Agent'tan gelen ham metni al ve temiz JSON formatına dönüştür\nlet rawText = items[0].json.output;\n\n// Eğer AI Agent yanıtı tırnak içinde veya markdown bloğunda verdiyse temizle\nrawText = rawText.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\ntry {\n  const cleanJson = JSON.parse(rawText);\n  return [{ json: cleanJson }];\n} catch (error) {\n  // Olası bir hata durumunda sistemin çökmemesi için güvenli fallback komutu\n  return [{ json: { \"komut_su\": \"kapat\", \"komut_fan\": \"kapat\", \"komut_isitici\": \"kapat\" } }];\n}"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -80,6 +80,20 @@
       ],
       "id": "783775b2-6c2a-4a82-a0db-436afea90f04",
       "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sera_hafiza_01"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -64,
+        192
+      ],
+      "id": "80fbec24-6ac9-4d6c-9524-a050e852a2b6",
+      "name": "Simple Memory"
     }
   ],
   "connections": {
@@ -122,6 +136,17 @@
           {
             "node": "Respond to Webhook",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
             "index": 0
           }
         ]
